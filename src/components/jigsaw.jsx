@@ -7,6 +7,7 @@ import { useImagePath } from '../imgeContext';
 
 const DemoPuzzle = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [users, setUsers] = useState([]);
   const { imagePath } = useImagePath();
   const canvasRef = useRef(null);
   const [currentPieceIndex, setCurrentPieceIndex] = useState(0);
@@ -60,7 +61,9 @@ const DemoPuzzle = () => {
       // const pieceHeight = img.current.height / rows;
       await updateStatus();
       const piecesData = await fetchPieceData();
-      console.log({ piecesData });
+      const userData = calculateScores(piecesData);
+      console.log({ userData });
+      setUsers(userData);
       const newPieces = piecesData.map((piece) => ({
         sx: piece.sx,
         sy: piece.sy,
@@ -103,60 +106,80 @@ const DemoPuzzle = () => {
       drawPiece(idxSearch, newPieces);
     };
 
-    img.current.src = imagePath;
+    img.current.src =
+      'https://flbulgarelli.github.io/headbreaker/static/pettoruti.jpg';
   }, []);
 
   // if query params present, DO NOT RUN THIS EFFECT
-  useEffect(() => {
-    if (searchParams.get('sx')) return;
-    const newPieces = [];
-    const fetchQrCodes = async () => {
-      const fetchedData = await fetchPieceData();
-      const qrImages = fetchedData.map((piece) => piece.qrLink);
-      setQrCodes(qrImages);
-      setPieces(newPieces);
-    };
+  // useEffect(() => {
+  //   if (searchParams.get('sx')) return;
+  //   const newPieces = [];
+  //   const fetchQrCodes = async () => {
+  //     const fetchedData = await fetchPieceData();
+  //     const qrImages = fetchedData.map((piece) => piece.qrLink);
+  //     setQrCodes(qrImages);
+  //     setPieces(newPieces);
+  //   };
 
-    fetchQrCodes();
+  //   fetchQrCodes();
 
-    // img.current.onload = async function () {
-    // const rows = 2;
-    // const cols = 2;
-    // const pieceWidth = img.current.width / cols;
-    // const pieceHeight = img.current.height / rows;
-    // const newPieces = [];
-    // const newQrCodes = [];
-    // let pieceIndex = 0; // Start pieceIndex at 0
-    // for (let y = 0; y < rows; y++) {
-    //   for (let x = 0; x < cols; x++) {
-    //     const piece = {
-    //       sx: x * pieceWidth,
-    //       sy: y * pieceHeight,
-    //       dx: x * pieceWidth,
-    //       dy: y * pieceHeight,
-    //       width: pieceWidth,
-    //       height: pieceHeight,
-    //       pieceIndex: pieceIndex++, // Increment pieceIndex after assigning
-    //     };
-    //     newPieces.push(piece);
-    //     const searchParams = new URLSearchParams(piece);
-    //     const qrData = `http://localhost:5173/?${searchParams.toString()}`;
-    //     QRCode.toDataURL(qrData, (err, url) => {
-    //       if (err) console.error(err);
-    //       else {
-    //         newQrCodes.push(url);
-    //         if (newQrCodes.length === rows * cols) setQrCodes(newQrCodes);
-    //       }
-    //     });
-    //   }
-    // }
-    // setPieces(newPieces);
-    // drawPiece(0, newPieces);
-    // };
+  //   // img.current.onload = async function () {
+  //   // const rows = 2;
+  //   // const cols = 2;
+  //   // const pieceWidth = img.current.width / cols;
+  //   // const pieceHeight = img.current.height / rows;
+  //   // const newPieces = [];
+  //   // const newQrCodes = [];
+  //   // let pieceIndex = 0; // Start pieceIndex at 0
+  //   // for (let y = 0; y < rows; y++) {
+  //   //   for (let x = 0; x < cols; x++) {
+  //   //     const piece = {
+  //   //       sx: x * pieceWidth,
+  //   //       sy: y * pieceHeight,
+  //   //       dx: x * pieceWidth,
+  //   //       dy: y * pieceHeight,
+  //   //       width: pieceWidth,
+  //   //       height: pieceHeight,
+  //   //       pieceIndex: pieceIndex++, // Increment pieceIndex after assigning
+  //   //     };
+  //   //     newPieces.push(piece);
+  //   //     const searchParams = new URLSearchParams(piece);
+  //   //     const qrData = `http://localhost:5173/?${searchParams.toString()}`;
+  //   //     QRCode.toDataURL(qrData, (err, url) => {
+  //   //       if (err) console.error(err);
+  //   //       else {
+  //   //         newQrCodes.push(url);
+  //   //         if (newQrCodes.length === rows * cols) setQrCodes(newQrCodes);
+  //   //       }
+  //   //     });
+  //   //   }
+  //   // }
+  //   // setPieces(newPieces);
+  //   // drawPiece(0, newPieces);
+  //   // };
 
-    // img.current.src =
-    //   'https://flbulgarelli.github.io/headbreaker/static/pettoruti.jpg';
-  }, [searchParams]);
+  //   // img.current.src =
+  //   //   'https://flbulgarelli.github.io/headbreaker/static/pettoruti.jpg';
+  // }, [searchParams]);
+
+  const calculateScores = (data) => {
+    const userScores = {};
+
+    data.forEach(({ username, status }) => {
+      if (status) {
+        if (userScores[username]) {
+          userScores[username] += 1;
+        } else {
+          userScores[username] = 1;
+        }
+      }
+    });
+
+    return Object.entries(userScores).map(([username, score]) => ({
+      username,
+      score,
+    }));
+  };
 
   const drawPiece = (index, pieces) => {
     const canvas = canvasRef.current;
@@ -239,8 +262,61 @@ const DemoPuzzle = () => {
     console.error(err);
   };
 
+  console.log({ users });
   return (
-    <div>
+    <div style={{ display: 'flex', marginTop: '30px', gap: '30px' }}>
+      <div
+        style={{
+          fontFamily: 'Arial, sans-serif',
+          border: '2px solid #ccc',
+          borderRadius: '5px',
+          padding: '10px',
+          maxWidth: '400px',
+        }}
+      >
+        <div
+          style={{
+            fontSize: '20px',
+            fontWeight: 'bold',
+            marginBottom: '10px',
+            textAlign: 'center',
+          }}
+        >
+          Leader Board
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            gap: '100px',
+            justifyContent: 'space-between',
+            fontWeight: 'bold',
+            borderBottom: '1px solid #ccc',
+            paddingBottom: '5px',
+            marginBottom: '10px',
+          }}
+        >
+          <span>Username</span>
+          <span>Score</span>
+        </div>
+        {users.length &&
+          users.map((user, index) => (
+            <div
+              key={index}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: '16px',
+                margin: '5px 0',
+                padding: '5px',
+                backgroundColor: '#f0f0f0',
+                borderRadius: '3px',
+              }}
+            >
+              <span>{user.username}</span>
+              <span>{user.score}</span>
+            </div>
+          ))}
+      </div>
       <canvas
         id="puzzleCanvas"
         ref={canvasRef}
@@ -252,9 +328,9 @@ const DemoPuzzle = () => {
         Next Piece
       </button> */}
       <div>
-        {qrCodes.map((qrCode, index) => (
+        {/* {qrCodes.map((qrCode, index) => (
           <img key={index} src={qrCode} alt={`QR code for piece ${index}`} />
-        ))}
+        ))} */}
         {/* <img key={index} src={qrCodes[0]} /> */}
       </div>
     </div>
